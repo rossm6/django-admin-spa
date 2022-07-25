@@ -1,15 +1,19 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { Box, Button, Card, Flex } from "theme-ui";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import { Box, Button, Card, Flex, Heading, Paragraph } from "theme-ui";
 import ThreeDots from "../icons/threeDots.svg";
 import { Dropdown, DropdownMenu } from "./Dropdown";
 import Check from "../icons/check.svg";
 import { Rnd } from "react-rnd";
+import { BuildPageContext } from "../pages/BuildPage";
 
 export const DevToolsContext = createContext();
 
 function Devtools () {
 
-  const { devtoolsPosition: position, setDevtoolsPosition  } = useContext(DevToolsContext);
+  const {
+    devtoolsPosition: position,
+    setDevtoolsPosition
+  } = useContext(DevToolsContext);
   const [showDevtoolsPositionDropdown, setShowDevtoolsPositionDropdown] = useState(false);
 
   const [devtoolsState, setDevtoolsState] = useState({
@@ -18,6 +22,8 @@ function Devtools () {
     key: 1
   });
 
+  const buildPageContext = useContext(BuildPageContext);
+
   useEffect(() => {
     const hideDropdown = () => setShowDevtoolsPositionDropdown(false);
     window.addEventListener("click", hideDropdown);
@@ -25,6 +31,24 @@ function Devtools () {
       window.removeEventListener("click", hideDropdown);
     };
   }, [setShowDevtoolsPositionDropdown]);
+
+
+  let devtoolsSx = {
+    borderStyle: "solid",
+    borderWidth: 1,
+    borderColor: "haze"
+  };
+
+  if(position === "right"){
+    devtoolsSx["borderRight"] = 0;
+    devtoolsSx["borderTop"] = 0;
+    devtoolsSx["borderBottom"] = 0;
+  }
+  else if(position === "left"){
+    devtoolsSx["borderLeft"] = 0;
+    devtoolsSx["borderTop"] = 0;
+    devtoolsSx["borderBottom"] = 0;
+  }
 
   let enableResizing = {
     top: false,
@@ -73,100 +97,111 @@ function Devtools () {
       <Box
         className="devtools"
         sx={{
-          bg: "haze",
           height: "100%",
           width: "100%",
           minWidth: devtoolsState.minWidth,
-          minHeight: devtoolsState.minHeight
+          minHeight: devtoolsState.minHeight,
+          p: 2,
+          ...devtoolsSx
         }}
       >
-        <Flex sx={{ justifyContent: "flex-end" }}>
-            <DropdownMenu>
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowDevtoolsPositionDropdown(!showDevtoolsPositionDropdown)
-                }}
-                variant="icon"
-                sx={{ height: "auto", width: "auto", borderRadius: 0 }}
+        <Flex sx={{ alignItems: "center", justifyContent: "space-between" }}>
+          <Heading sx={{ fontSize: 14 }}>Devtools</Heading>
+          <DropdownMenu>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDevtoolsPositionDropdown(!showDevtoolsPositionDropdown)
+              }}
+              variant="icon"
+              sx={{ height: "auto", width: "auto", borderRadius: 0 }}
+            >
+              <ThreeDots/>
+            </Button>
+            <Dropdown show={showDevtoolsPositionDropdown} position={position === "left" ? "right" : "left"}>
+              <Card
+                variant="dropdown"
+                sx={{ bg: "white", minWidth: 200, zIndex: 1 }}
               >
-                <ThreeDots/>
-              </Button>
-              <Dropdown show={showDevtoolsPositionDropdown} position={position === "left" ? "right" : "left"}>
-                <Card
-                  variant="dropdown"
-                  sx={{ bg: "white", minWidth: 200, zIndex: 1 }}
+                <Box
+                  onClick={() => {
+                    setDevtoolsPosition("left");
+                    setDevtoolsState({
+                      ...devtoolsState,
+                      width: 300,
+                      minWidth: 300,
+                      height: "100%"
+                    });
+                  }}
+                  sx={{
+                    px: 4,
+                    py: 2,
+                    textAlign: "left",
+                    "&:hover": { bg: "haze" },
+                  }}
                 >
-                  <Box
-                    onClick={() => {
-                      setDevtoolsPosition("left");
-                      setDevtoolsState({
-                        ...devtoolsState,
-                        width: 300,
-                        minWidth: 300,
-                        height: "100%"
-                      });
-                    }}
-                    sx={{
-                      px: 4,
-                      py: 2,
-                      textAlign: "left",
-                      "&:hover": { bg: "haze" },
-                    }}
-                  >
-                    <Check style={{ visibility: position === "left" ? "visible" : "hidden" }} />
-                    Dock to left
-                  </Box>
-                  <Box
-                    onClick={() => {
-                      setDevtoolsPosition("right");
-                      setDevtoolsState({
-                        ...devtoolsState,
-                        width: 300,
-                        minWidth: 300,
-                        height: "100%"
-                      });
-                    }}
-                    sx={{
-                      px: 4,
-                      py: 2,
-                      textAlign: "left",
-                      "&:hover": { bg: "haze" },
-                    }}
-                  >
-                    <Check style={{ visibility: position === "right" ? "visible" : "hidden" }} />
-                    Dock to right
-                  </Box>
-                  <Box
-                    onClick={() => {
-                      setDevtoolsPosition("separate");
-                      setDevtoolsState({
-                        ...devtoolsState,
-                        width: "50%",
-                        minWidth: 300,
-                        minHeight: 200,
-                        height: "50%",
-                        x: 0,
-                        y: 0,
-                        key: devtoolsState.key + 1
-                      });
-                    }}
-                    sx={{
-                      px: 4,
-                      py: 2,
-                      textAlign: "left",
-                      "&:hover": { bg: "haze" },
-                    }}
-                  >
-                    <Check style={{ visibility: position === "separate" ? "visible" : "hidden" }} />
-                      Separate window
-                  </Box>
-                </Card>
-              </Dropdown>
-            </DropdownMenu>
-            <Box>
-            </Box>
+                  <Check style={{ visibility: position === "left" ? "visible" : "hidden" }} />
+                  Dock to left
+                </Box>
+                <Box
+                  onClick={() => {
+                    setDevtoolsPosition("right");
+                    setDevtoolsState({
+                      ...devtoolsState,
+                      width: 300,
+                      minWidth: 300,
+                      height: "100%"
+                    });
+                  }}
+                  sx={{
+                    px: 4,
+                    py: 2,
+                    textAlign: "left",
+                    "&:hover": { bg: "haze" },
+                  }}
+                >
+                  <Check style={{ visibility: position === "right" ? "visible" : "hidden" }} />
+                  Dock to right
+                </Box>
+                <Box
+                  onClick={() => {
+                    setDevtoolsPosition("separate");
+                    setDevtoolsState({
+                      ...devtoolsState,
+                      width: "50%",
+                      minWidth: 300,
+                      minHeight: 200,
+                      height: "50%",
+                      x: 0,
+                      y: 0,
+                      key: devtoolsState.key + 1
+                    });
+                  }}
+                  sx={{
+                    px: 4,
+                    py: 2,
+                    textAlign: "left",
+                    "&:hover": { bg: "haze" },
+                  }}
+                >
+                  <Check style={{ visibility: position === "separate" ? "visible" : "hidden" }} />
+                    Separate window
+                </Box>
+              </Card>
+            </Dropdown>
+          </DropdownMenu>
           </Flex>
+          <Paragraph>
+            No element selected
+          </Paragraph>
+          <Paragraph>
+            Looks like this is a blank page.  Click the empty page to add new components, and, or,
+            use pre built templates.
+          </Paragraph>
+          <Paragraph>
+            Hover over the page to see the various elements.  Click on which you want to
+            enter.
+          </Paragraph>
       </Box>
     </Rnd>
   );

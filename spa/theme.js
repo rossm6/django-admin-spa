@@ -84,14 +84,8 @@ const theme = {
     danger: "#dc3545",
     success: "#198754",
     haze: "rgb(237, 238, 240)",
-  },
-  layout: {
-    container: {},
-  },
-  sizes: {
-    container: {
-      maxWidth: 900,
-    },
+    slate: "rgb(112, 128, 144)",
+    hazeHover: "rgb(182, 183, 185)"
   },
   space: [0, 5, 10, 15, 20, 30, 40],
   buttons: {
@@ -250,6 +244,16 @@ const theme = {
       cursor: "pointer",
       bg: "purple",
     },
+    tile: {
+      color: "black",
+      p: 4,
+      fontSize: 12,
+      cursor: "pointer",
+      bg: "haze",
+      "&:hover": {
+        bg: "hazeHover",
+      },
+    }
   },
   styles: {
     root: {
