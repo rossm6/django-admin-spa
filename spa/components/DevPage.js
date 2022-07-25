@@ -4,8 +4,26 @@ import { BuildPageContext } from '../pages/BuildPage';
 import ComponentTree from './ComponentTree';
 import Devtools, { DevToolsContext } from './Devtools';
 
-function findParentDOMElement (domElement) {
 
+function findNthComponent (tree, index) {
+
+}
+
+
+function findRefFromDOMElement (refs, domElement) {
+
+  for(let i = refs.length - 1; i < 0; i--){
+    if(refs[i].current && refs[i].current.contains(domElement)){
+      return [refs[i], i];
+    }
+  }
+  return [undefined, undefined];
+}
+
+
+function findComponentFromDomElement (refs, domElement, tree) {
+  const [, index] = findRefFromDOMElement(refs, domElement);
+  return findNthComponent(tree, index);
 }
 
 
@@ -47,6 +65,32 @@ function getComponentTreeRefs (componentTree) {
 
 }
 
+
+function ComponentOverlay ({ domElement }) {
+
+  if(!domElement) return null;
+
+  const rect = domElement.getBoundingClientRect();
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: rect.y,
+        left: rect.x,
+        width: rect.width,
+        height: rect.height,
+        zIndex: 10000000,
+        background: "red",
+        opacity: 0.5
+      }}
+    >
+    </div>
+  );
+
+}
+
+
 export default function DevPage () {
 
   const [devtoolsPosition, setDevtoolsPosition] = useState("right");
@@ -57,20 +101,27 @@ export default function DevPage () {
   // to a text node / string child of a react component)
   // This doesn't matter though (more than enough)
   const componentRefs = useRef(getComponentTreeRefs(buildPageContext?.pageState));
+  const [coverElementWithOverlay, setCoverElementWithOverlay] = useState();
 
-  useEffect(() => {
-    if(pageContainer.current){
 
-      function mouseOverFunc (e) {
-        const elem = e.target;
-      }
+  // useEffect(() => {
+  //   if(pageContainer.current){
 
-      pageContainer.current.addEventListener("mouseover", mouseOverFunc);
-      return () => {
-        pageContainer.current.removeEventListener("mouseover", mouseOverFunc);
-      };
-    }
-  }, []);
+  //     function mouseMoveFunc (e) {
+  //       const elem = e.target;
+  //       const [ref,] = findRefFromDOMElement(componentRefs, elem);
+  //       setCoverElementWithOverlay(ref?.current ? ref.current : pageContainer.current);
+
+  //       // const Component = findComponentFromDomElement(componentRefs, elem, buildPageContext.pageState);
+  //       // const DevtoolsComponent = Component.devtools;
+  //     }
+
+  //     pageContainer.current.addEventListener("mousemove", mouseMoveFunc);
+  //     return () => {
+  //       pageContainer.current.removeEventListener("mousemove", mouseMoveFunc);
+  //     };
+  //   }
+  // }, [setCoverElementWithOverlay]);
 
   let mainContainerSx = {display: "flex", height: "100vh"};
   let uiSx = {};
@@ -104,8 +155,6 @@ export default function DevPage () {
     };
   }
 
-  console.log("component refs", componentRefs)
-
   return (
     <DevToolsContext.Provider value={{ devtoolsPosition, setDevtoolsPosition }}>
       <Box
@@ -123,6 +172,7 @@ export default function DevPage () {
           {buildPageContext?.pageState && <ComponentTree tree={buildPageContext.pageState} refs={componentRefs.current} />}
         </Box>
         <Devtools />
+        <ComponentOverlay domElement={coverElementWithOverlay} />
       </Box>
     </DevToolsContext.Provider>
   );
