@@ -57,7 +57,9 @@ function getComponentTreeRefs (componentTree) {
 
   for(let i = 0; i < numberOfComponents; i++){
     refs.push({
-      current: undefined
+      ref: {
+        current: undefined
+      }
     });
   }
 
@@ -101,8 +103,10 @@ export default function DevPage () {
   // to a text node / string child of a react component)
   // This doesn't matter though (more than enough)
   const componentRefs = useRef(getComponentTreeRefs(buildPageContext?.pageState));
+  const renderCount = useRef(0);
   const [coverElementWithOverlay, setCoverElementWithOverlay] = useState();
 
+  renderCount.current = renderCount.current + 1;
 
   // useEffect(() => {
   //   if(pageContainer.current){
@@ -169,9 +173,9 @@ export default function DevPage () {
             ...uiSx
           }}
         >
-          {buildPageContext?.pageState && <ComponentTree tree={buildPageContext.pageState} refs={componentRefs.current} />}
+          {buildPageContext?.pageState && <ComponentTree renderCount={renderCount.current} tree={buildPageContext.pageState} refs={componentRefs.current} />}
         </Box>
-        <Devtools />
+        <Devtools tree={buildPageContext.pageState} refs={componentRefs.current} />
         <ComponentOverlay domElement={coverElementWithOverlay} />
       </Box>
     </DevToolsContext.Provider>

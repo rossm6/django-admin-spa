@@ -1,27 +1,83 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
-import { Box, Button, Card, Flex, Heading, Paragraph } from "theme-ui";
+import { Box, Button, Card, Flex, Heading, Label, Paragraph, Select } from "theme-ui";
 import ThreeDots from "../icons/threeDots.svg";
 import { Dropdown, DropdownMenu } from "./Dropdown";
 import Check from "../icons/check.svg";
 import { Rnd } from "react-rnd";
 import { BuildPageContext } from "../pages/BuildPage";
+import Tree, { TreeNode } from 'rc-tree';
+import "rc-tree/assets/index.css"
+import ComponentsForm from "./ComponentsForm";
 
 export const DevToolsContext = createContext();
 
-function Devtools () {
+
+function fromComponentTreeGetReactTreeComponentData (componentTree, path = []) {
+  const parentLevel = path.length ? path[path.length - 1][0] : -1;
+  const tree = [];
+
+  if(Array.isArray(componentTree)){
+    for(let i = 0; i < componentTree.length; i++){
+      // ignore nodes in the tree which are not react components
+      // e.g. text nodes
+      if(componentTree[i]?.props){
+        tree.push(
+          fromComponentTreeGetReactTreeComponentData(
+            componentTree[i],
+            [...path, [parentLevel + 1, i]]
+          )
+        );
+      }
+    }
+  }
+
+  if(componentTree?.props?.children.length){
+    const componentName = componentTree.props.userSelected?.Component?.displayName;
+    return {
+      key: JSON.stringify(path),
+      title: `<${componentName}></${componentName}>`,
+      children: fromComponentTreeGetReactTreeComponentData(
+        componentTree.props.children,
+        path
+      ),
+    }
+  }
+
+  if(componentTree?.props?.Component){
+    const componentName = componentTree.props.userSelected?.Component?.displayName;
+    return {
+      key: JSON.stringify(path),
+      title: `<${componentName}></${componentName}>`,
+      children: [],
+    }
+  }
+
+  return tree;
+
+}
+
+
+function DevoModeComponentTree ({ tree: componentTree, refs }) {
+
+  const tree = fromComponentTreeGetReactTreeComponentData(componentTree);
+
+  return <Tree showLine showIcon={false} treeData={tree} />;
+
+}
+
+
+function Devtools ({ tree, refs }) {
 
   const {
     devtoolsPosition: position,
     setDevtoolsPosition
   } = useContext(DevToolsContext);
   const [showDevtoolsPositionDropdown, setShowDevtoolsPositionDropdown] = useState(false);
-
   const [devtoolsState, setDevtoolsState] = useState({
     width: 300,
     height: "100%",
     key: 1
   });
-
   const buildPageContext = useContext(BuildPageContext);
 
   useEffect(() => {
@@ -191,17 +247,22 @@ function Devtools () {
             </Dropdown>
           </DropdownMenu>
           </Flex>
-          <Paragraph>
-            No element selected
-          </Paragraph>
-          <Paragraph>
-            Looks like this is a blank page.  Click the empty page to add new components, and, or,
-            use pre built templates.
-          </Paragraph>
-          <Paragraph>
-            Hover over the page to see the various elements.  Click on which you want to
-            enter.
-          </Paragraph>
+          {
+            buildPageContext.pageState.length
+            ?
+            <>
+            </>
+            :
+            <>
+              <Paragraph sx={{ mt: 5 }}>This looks like a blank state.  Click the create button below
+                to add your first component to the page.
+              </Paragraph>
+              <ComponentsForm/>
+            </>
+        }
+          <Box>
+            <DevoModeComponentTree tree={tree} refs={refs} />
+          </Box>
       </Box>
     </Rnd>
   );

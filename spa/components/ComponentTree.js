@@ -1,6 +1,5 @@
 import React from "react";
 
-
 function getComponentTreeProps (path, index, parentLevel) {
   const newPath = [...path, [parentLevel + 1, index]];
   return {
@@ -9,7 +8,7 @@ function getComponentTreeProps (path, index, parentLevel) {
   };
 }
 
-function ComponentTree({ path = [], tree, refs, assignedRefs = [] }) {
+function ComponentTree({ path = [], renderCount, tree, refs }) {
   const parentLevel = path.length ? path[path.length - 1][0] : -1;
 
   if (Array.isArray(tree)) {
@@ -18,7 +17,7 @@ function ComponentTree({ path = [], tree, refs, assignedRefs = [] }) {
           {...getComponentTreeProps(path, index, parentLevel)}
           tree={node}
           refs={refs}
-          assignedRefs={assignedRefs}
+          renderCount={renderCount}
         />
       ));
   }
@@ -26,20 +25,21 @@ function ComponentTree({ path = [], tree, refs, assignedRefs = [] }) {
   let devmodeRef;
 
   for(let i = 0; i < refs.length; i++){
-    if(!assignedRefs.includes(i)){
+    if(!refs[i].renderCount || refs[i].renderCount !== renderCount){
       devmodeRef = refs[i];
-      assignedRefs.push(i);
+      devmodeRef.renderCount = renderCount;
       break;
     }
   }
 
   if(tree?.props?.children?.length){
     return (
-      <tree.Component {...tree.props} devmodeRef={devmodeRef}>
+      <tree.Component {...tree.props} devmodeRef={devmodeRef.ref}>
         <ComponentTree
-          path={path} tree={tree.props.children}
+          path={path}
+          tree={tree.props.children}
           refs={refs}
-          assignedRefs={assignedRefs}
+          renderCount={renderCount}
         />
       </tree.Component>
     );
@@ -47,7 +47,7 @@ function ComponentTree({ path = [], tree, refs, assignedRefs = [] }) {
 
   if(tree?.props?.Component){
     return (
-      <tree.Component {...tree.props} devmodeRef={devmodeRef} />
+      <tree.Component {...tree.props} devmodeRef={devmodeRef.ref} renderCount={renderCount} />
     );
   }
 
