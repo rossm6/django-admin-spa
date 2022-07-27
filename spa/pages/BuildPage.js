@@ -3,7 +3,7 @@ import DevPage from "../components/DevPage";
 import { Box as ThemeUiBox, Input, Label } from "theme-ui";
 import DevmodeComponentWrapper from "../components/DevmodeComponentWrapper";
 import toCamelCase from "lodash.camelcase";
-import FormAPI, { Form } from "../components/Form";
+import FormAPI, { Form, FormContext, Field } from "../components/Form";
 
 export const BuildPageContext = createContext();
 
@@ -24,40 +24,6 @@ const Box = React.forwardRef((props, ref) => (
 ));
 
 Box.displayName = "Box";
-
-function prefixProp (prefix, prop) {
-  return `${prefix}-${prop}-prop`;
-}
-
-function Field ({ prefix, label, name }) {
-
-  return (
-    <>
-      <Box my={4}>
-        <Label
-          htmlFor={prefixProp(prefix, name.toLowerCase())}
-          sx={{ my: 2 }}
-          variant="todo"
-        >
-          {label}
-        </Label>
-        <Input
-          id={prefixProp(prefix, name.toLowerCase())}
-          name={name}
-          sx={{
-            width: "auto"
-          }}
-          variant="todo"
-        />
-      </Box>
-    </>
-  );
-}
-
-Field.defaultProps = {
-  prefix: "devtools-form"
-};
-
 
 /**
  * We shouldn't have to manually write out all the Field
@@ -631,22 +597,15 @@ function BoxDevTools () {
   });
 
   return (
-    <FormAPI
-      fields={fields}
-    >
-      <Form sx={{ height: 300, maxHeight: 300, overflow: "auto", p: 2 }}>
-        {
-          Object.values(fields).map((field, index) => (
-            <Field key={field.name} label={field.label} name={field.name} />
-          ))
-        }
-      </Form>
-    </FormAPI>
+      Object.values(fields).map(field => (
+        <Field key={field.name} name={field.name} />
+      ))
   );
 
 }
 
-Box.Devtools = BoxDevTools
+Box.devtoolsFormFields = boxProps;
+Box.DevtoolsComponent = BoxDevTools
 
 
 const Table = React.forwardRef((props, ref) => (
@@ -666,6 +625,42 @@ const Table = React.forwardRef((props, ref) => (
   </table>
 ));
 
+Table.devtoolsFormFields = [
+  {
+    name: "columns",
+    label: "Columns",
+    type: "checkbox",
+    choices: [
+      {
+        label: "A",
+        value: "A"
+      },
+      {
+        label: "B",
+        value: "B"
+      }
+    ],
+    multi: true,
+    initialValue: ["A", "B"]
+  }
+];
+
+function TableDevTools () {
+
+  const fields = {};
+  boxProps.forEach(prop => {
+    fields[prop.name] = prop;
+  });
+
+  return (
+      Object.values(fields).map(field => (
+        <Field key={field.name} name={field.name} />
+      ))
+  );
+
+}
+
+Table.DevtoolsComponent = TableDevTools;
 
 /**
  *

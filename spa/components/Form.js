@@ -43,14 +43,15 @@ function modifySet(set, value, action) {
   return set;
 }
 
-function reset(state) {
-  const newFormValues = clone(state.initialValues);
+function reset(state, fieldsAndValues) {
+  const newFormValues = clone(fieldsAndValues);
   const useInitialValues = new Set();
   Object.keys(newFormValues).forEach((key) => {
     useInitialValues.add(key);
   });
   return {
     ...state,
+    initialValues: newFormValues,
     values: newFormValues,
     useInitialValues,
   };
@@ -59,7 +60,7 @@ function reset(state) {
 function formReducer(state, action) {
   switch (action.type) {
     case "reset":
-      return reset(state);
+      return reset(state, action.payload?.fields || state.initialValues);
     case "setFieldValue":
       return {
         ...state,
@@ -87,7 +88,7 @@ function formReducer(state, action) {
   }
 }
 
-const FormContext = createContext();
+export const FormContext = createContext();
 
 function BaseLabel({ Component, label, htmlFor }) {
   return <Component htmlFor={htmlFor}>{label}</Component>;
@@ -1015,16 +1016,17 @@ Form.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-export default function FormAPI({
-  children,
+
+export function useForm ({
   fields,
   nonFieldValidation,
-  onSubmit: _onSubmit,
-  validationSchema: usersValidationSchema,
+  _onSubmit,
+  usersValidationSchema,
   components,
   resetForm,
-  serverSideErrors,
+  serverSideErrors
 }) {
+
   const validationSchema = useRef();
   const nonFieldValidationSchema = useRef();
   nonFieldValidationSchema.current = nonFieldValidation;
@@ -1054,6 +1056,8 @@ export default function FormAPI({
       fieldLevelValidationOverrides[fieldName] = fieldConfig.validation;
     }
   });
+
+  initial.values = clone(initial.initialValues);
 
   /**
    * Field level validation will override any default validation.
@@ -1171,6 +1175,31 @@ export default function FormAPI({
       isValid,
     }),
     [state, dispatch, onSubmit, isValid]
+  );
+
+  return formApi;
+
+}
+
+export default function FormAPI({
+  children,
+  fields,
+  nonFieldValidation,
+  onSubmit,
+  validationSchema,
+  components,
+  resetForm,
+  serverSideErrors,
+}) {
+
+  const formApi = useForm(
+    fields,
+    nonFieldValidation,
+    onSubmit,
+    validationSchema,
+    components,
+    resetForm,
+    serverSideErrors
   );
 
   return (
