@@ -641,14 +641,23 @@ Table.devtoolsFormFields = [
       }
     ],
     multi: true,
-    initialValue: ["A", "B"]
+    initialValue: [
+      {
+        label: "A",
+        value: "A"
+      },
+      {
+        label: "B",
+        value: "B"
+      }
+    ]
   }
 ];
 
 function TableDevTools () {
 
   const fields = {};
-  boxProps.forEach(prop => {
+  Table.devtoolsFormFields.forEach(prop => {
     fields[prop.name] = prop;
   });
 

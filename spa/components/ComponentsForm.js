@@ -69,11 +69,20 @@ function ComponentsForm () {
        * we passed to the hook / form component and it
        * completely re-initialises the form
        */
+
+      const initialValuesForIndependentFields = {
+        ...independentFormFields
+      };
+
+      initialValuesForIndependentFields["component"]["initialValue"]
+      =
+      initialValuesForIndependentFields["component"]["choices"][1];
+
       formAPI.dispatch({
         type: "reset",
         payload: {
           fields: {
-            ...independentFormFields,
+            ...initialValuesForIndependentFields,
             ...normaliseFormFields(
               buildPageContext
               .components[formAPI.state.values.component.value]
@@ -95,8 +104,13 @@ function ComponentsForm () {
   const componentName = formAPI.state.values.component.value;
   const ComponentForm = buildPageContext.components[componentName].DevtoolsComponent;
 
+
+  console.log(formAPI);
+
+
   return (
     <FormContext.Provider value={formAPI}>
+      <input type="checkbox" />
       <Form>
         <Box sx={{ my: 4 }}>
           <Box sx={{ my: 4 }}>

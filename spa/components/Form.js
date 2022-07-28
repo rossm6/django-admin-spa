@@ -43,24 +43,45 @@ function modifySet(set, value, action) {
   return set;
 }
 
-function reset(state, fieldsAndValues) {
-  const newFormValues = clone(fieldsAndValues);
-  const useInitialValues = new Set();
-  Object.keys(newFormValues).forEach((key) => {
-    useInitialValues.add(key);
-  });
-  return {
-    ...state,
-    initialValues: newFormValues,
-    values: newFormValues,
-    useInitialValues,
+function init (fields, components = {}) {
+
+  const initial = {
+    initialValues: {},
+    useInitialValues: new Set(),
+    values: {},
+    errors: {},
+    fields,
+    components: mergeDefaultProps(FormAPI.defaultProps.components, components),
   };
+
+  const defaultValidation = {};
+  const fieldLevelValidationOverrides = {};
+
+  Object.entries(fields).forEach(([fieldName, fieldConfig]) => {
+    initial.initialValues[fieldName] = fieldConfig.initialValue;
+    initial.useInitialValues.add(fieldName);
+    const defaultFieldValidation = getDefaultFieldValidation(fieldConfig);
+    if (defaultFieldValidation) {
+      defaultValidation[fieldName] = defaultFieldValidation;
+    }
+    if (fieldConfig.validation) {
+      fieldLevelValidationOverrides[fieldName] = fieldConfig.validation;
+    }
+  });
+
+  initial.values = clone(initial.initialValues);
+
+  return initial;
+}
+
+function reset(fields, components = {}) {
+  return init(fields, components);
 }
 
 function formReducer(state, action) {
   switch (action.type) {
     case "reset":
-      return reset(state, action.payload?.fields || state.initialValues);
+      return reset(action.payload.fields || state.initialValues, action.payload.components || state.components);
     case "setFieldValue":
       return {
         ...state,
@@ -1020,44 +1041,14 @@ Form.propTypes = {
 export function useForm ({
   fields,
   nonFieldValidation,
-  _onSubmit,
+  onSubmit: _onSubmit,
   usersValidationSchema,
   components,
   resetForm,
   serverSideErrors
 }) {
 
-  const validationSchema = useRef();
-  const nonFieldValidationSchema = useRef();
-  nonFieldValidationSchema.current = nonFieldValidation;
-  const usersOnSubmit = useRef();
-  usersOnSubmit.current = _onSubmit;
-
-  const initial = {
-    initialValues: {},
-    useInitialValues: new Set(),
-    values: {},
-    errors: {},
-    fields,
-    components: mergeDefaultProps(FormAPI.defaultProps.components, components),
-  };
-
-  const defaultValidation = {};
-  const fieldLevelValidationOverrides = {};
-
-  Object.entries(fields).forEach(([fieldName, fieldConfig]) => {
-    initial.initialValues[fieldName] = fieldConfig.initialValue;
-    initial.useInitialValues.add(fieldName);
-    const defaultFieldValidation = getDefaultFieldValidation(fieldConfig);
-    if (defaultFieldValidation) {
-      defaultValidation[fieldName] = defaultFieldValidation;
-    }
-    if (fieldConfig.validation) {
-      fieldLevelValidationOverrides[fieldName] = fieldConfig.validation;
-    }
-  });
-
-  initial.values = clone(initial.initialValues);
+  const initial = init(fields, components);
 
   /**
    * Field level validation will override any default validation.
@@ -1069,13 +1060,18 @@ export function useForm ({
    * have "required" presently.
    */
 
-  validationSchema.current = usersValidationSchema;
-  yup.object({
-    ...defaultValidation,
-    ...fieldLevelValidationOverrides,
+  const [state, dispatch] = useReducer(formReducer, initial);
+
+  const validationSchema = useRef();
+  const nonFieldValidationSchema = useRef();
+  nonFieldValidationSchema.current = nonFieldValidation;
+  const usersOnSubmit = useRef();
+  usersOnSubmit.current = _onSubmit;
+  validationSchema.current = usersValidationSchema || yup.object({
+    ...state.defaultValidation,
+    ...state.fieldLevelValidationOverrides,
   });
 
-  const [state, dispatch] = useReducer(formReducer, initial);
 
   const previousServerSideErrors = usePrevious(serverSideErrors);
 
@@ -1192,7 +1188,7 @@ export default function FormAPI({
   serverSideErrors,
 }) {
 
-  const formApi = useForm(
+  const formApi = useForm({
     fields,
     nonFieldValidation,
     onSubmit,
@@ -1200,7 +1196,7 @@ export default function FormAPI({
     components,
     resetForm,
     serverSideErrors
-  );
+  });
 
   return (
     <FormContext.Provider value={formApi}>{children}</FormContext.Provider>
